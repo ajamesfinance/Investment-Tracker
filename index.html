@@ -1,477 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0c0f" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="InvestTrack" />
-  <title>InvestTrack</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0a0c0f;
-      --surface: #111318;
-      --border: #1e2128;
-      --green: #00e887;
-      --blue: #3d8eff;
-      --amber: #ffb547;
-      --red: #ff4f4f;
-      --text: #e8eaf0;
-      --muted: #555c6e;
-      --dim: #8891a4;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; overscroll-behavior: none; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
-
-    /* ── Layout ── */
-    .app { max-width: 860px; margin: 0 auto; padding: 28px 16px 100px; }
-
-    /* ── Header ── */
-    .eyebrow { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-    h1 { font-family: 'Syne', sans-serif; font-size: clamp(30px,6vw,48px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
-    h1 span { color: var(--green); }
-    .sub { font-size: 12px; color: var(--muted); margin-top: 8px; margin-bottom: 28px; line-height: 1.6; }
-
-    /* ── Stats ── */
-    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 28px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
-    .stat-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
-    .stat-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
-    .stat-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
-
-    /* ── Ring ── */
-    .ring-wrap { position: relative; flex-shrink: 0; }
-    .ring-wrap svg { transform: rotate(-90deg); }
-    .ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
-
-    /* ── Calendar ── */
-    .cal { display: flex; flex-direction: column; gap: 9px; }
-    .week-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding: 4px 2px; margin-top: 8px; }
-    .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; display: grid; grid-template-columns: 64px 1fr; gap: 14px; position: relative; transition: border-color 0.2s; }
-    .day-card.today { background: #0c1a13; border-color: var(--green); }
-    .day-card.weekend { opacity: 0.32; }
-    .today-badge { position: absolute; top: 11px; right: 13px; font-size: 9px; letter-spacing: 0.18em; color: var(--green); font-weight: 700; }
-    .d-name { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
-    .d-num { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; line-height: 1; color: var(--text); }
-    .day-card.today .d-num { color: var(--green); }
-    .weekend-msg { font-size: 12px; color: var(--muted); font-style: italic; padding-top: 4px; }
-
-    /* ── Tasks ── */
-    .task-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 11px; }
-    .task-row:last-child { margin-bottom: 0; }
-    .check { width: 22px; height: 22px; min-width: 22px; border-radius: 6px; border: 2px solid #2a3040; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-top: 1px; }
-    .check.done { border-color: var(--green); background: var(--green); }
-    .check.done::after { content: '✓'; color: #0a0c0f; font-size: 12px; font-weight: 800; }
-    .task-body { flex: 1; min-width: 0; }
-    .tag-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; flex-wrap: wrap; }
-    .pill { font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
-    .pill-roth       { background: rgba(61,142,255,0.15);  color: #3d8eff; border: 1px solid rgba(61,142,255,0.35);  }
-    .pill-individual { background: rgba(0,232,135,0.12);   color: #00e887; border: 1px solid rgba(0,232,135,0.3);   }
-    .pill-watch      { background: rgba(255,181,71,0.12);  color: #ffb547; border: 1px solid rgba(255,181,71,0.3);  }
-    .pill-hold       { background: rgba(136,145,164,0.1);  color: #8891a4; border: 1px solid rgba(136,145,164,0.25);}
-    .badge-amt  { font-size: 10px; color: #00e887; background: rgba(0,232,135,0.1);  border: 1px solid rgba(0,232,135,0.3);  padding: 2px 7px; border-radius: 4px; }
-    .badge-note { font-size: 10px; color: #ffb547; background: rgba(255,181,71,0.1); border: 1px solid rgba(255,181,71,0.3); padding: 2px 7px; border-radius: 4px; }
-    .t-title { font-size: 13px; color: var(--text); line-height: 1.4; margin-bottom: 2px; transition: color 0.15s; }
-    .t-title.done { color: var(--muted); text-decoration: line-through; }
-    .t-note { font-size: 11px; color: var(--muted); line-height: 1.5; }
-    .action-btns { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-    .smbtn { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: transparent; cursor: pointer; font-family: 'DM Mono', monospace; transition: opacity 0.15s; }
-    .smbtn:active { opacity: 0.6; }
-    .smbtn-green { border: 1px solid #00e887; color: #00e887; }
-    .smbtn-amber { border: 1px solid #ffb547; color: #ffb547; }
-
-    /* ── FAB ── */
-    .fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); right: 24px; z-index: 50; background: var(--green); color: #0a0c0f; border: none; border-radius: 50%; width: 52px; height: 52px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; box-shadow: 0 4px 20px rgba(0,232,135,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
-    .fab:active { transform: scale(0.93); }
-
-    /* ── Modal ── */
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: flex; align-items: flex-end; justify-content: center; z-index: 100; padding: 0 0 env(safe-area-inset-bottom); }
-    @media (min-width: 600px) { .overlay { align-items: center; } }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 28px 24px calc(28px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; }
-    @media (min-width: 600px) { .modal { border-radius: 20px; padding: 28px 24px; } }
-    .modal h2 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-    .modal-sub { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
-    .inp { width: 100%; background: var(--bg); border: 1px solid #2a3040; border-radius: 10px; padding: 12px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; outline: none; margin-bottom: 12px; }
-    .inp:focus { border-color: var(--green); }
-    textarea.inp { height: 90px; resize: none; }
-    .btn-save { width: 100%; background: var(--green); color: #0a0c0f; border: none; border-radius: 10px; padding: 13px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 8px; transition: opacity 0.15s; }
-    .btn-save:active { opacity: 0.8; }
-    .btn-cancel { width: 100%; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
-
-    /* ── Log modal ── */
-    .log-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 28px 24px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
-    @media (min-width: 600px) { .log-modal { border-radius: 20px; } }
-    .log-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--green); margin-bottom: 20px; }
-    .log-entry { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
-    .log-meta { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-    .log-amt { color: var(--green); font-size: 14px; font-weight: 500; margin-bottom: 2px; }
-    .log-note { color: var(--dim); font-size: 12px; }
-    .sum-box { background: var(--bg); border-radius: 10px; padding: 14px; margin-top: 14px; }
-    .sum-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-    .sum-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
-    .sum-row span:first-child { color: var(--dim); }
-    .sum-row span:last-child { font-family: 'Syne', sans-serif; font-weight: 700; }
-
-    /* ── Install banner ── */
-    .install-banner { background: #0d1a13; border: 1px solid var(--green); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .install-text { font-size: 12px; color: var(--text); line-height: 1.5; }
-    .install-text strong { color: var(--green); font-family: 'Syne', sans-serif; }
-    .install-dismiss { font-size: 18px; color: var(--muted); cursor: pointer; flex-shrink: 0; background: none; border: none; color: var(--muted); }
-
-    @media (max-width: 480px) {
-      .stats { grid-template-columns: repeat(3,1fr); gap: 8px; }
-      .stat-card { padding: 10px 10px; gap: 8px; }
-      .stat-val { font-size: 15px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>INVESTTRACK // JM</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0b0d;--bg1:#0f1114;--bg2:#141619;--bg3:#1c1f24;--border:#2a2d35;--border2:#363a44;--text:#e8eaf0;--text2:#9aa0b0;--text3:#555c6e;--accent:#c8cdd8;--accent2:#9aa0b0;--green:#00d084;--green2:#00a866;--red:#ff4d4d;--blue:#4d9fff;--yellow:#ffd700;--roth:#4d9fff;--mu:#00d084;--ind:#ffd700}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100vh;font-size:13px}
+.ticker-bar{background:var(--accent);color:#0a0b0d;font-size:10px;font-weight:600;letter-spacing:.04em;padding:4px 0;overflow:hidden;white-space:nowrap}
+.ticker-inner{display:inline-block;animation:ticker 30s linear infinite}
+@keyframes ticker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+.hdr{background:var(--bg1);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:14px;font-weight:600;letter-spacing:.08em;color:var(--accent)}
+.logo span{color:var(--text3);font-weight:300}
+.hdr-time{font-size:10px;color:var(--text3);letter-spacing:.04em}
+.nav{background:var(--bg1);border-bottom:1px solid var(--border);display:flex}
+.ntab{flex:1;padding:10px 4px;font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:'IBM Plex Mono',monospace;transition:all .15s}
+.ntab:hover{color:var(--text2)}
+.ntab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{padding:12px;max-width:480px;margin:0 auto}
+.sec{display:none}
+.sec.active{display:block}
+.slbl{font-size:9px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.divider{height:1px;background:var(--border);margin:13px 0}
+.stat-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.sbox{background:var(--bg1);border:1px solid var(--border);padding:9px 11px}
+.skey{font-size:9px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+.sval{font-size:17px;font-weight:600;color:var(--text)}
+.sval.ac{color:var(--accent)}
+.sval.gr{color:var(--green)}
+.ssub{font-size:10px;color:var(--text3);margin-top:2px}
+.pb{margin-bottom:12px}
+.ph{display:flex;justify-content:space-between;margin-bottom:5px}
+.plbl{font-size:10px;letter-spacing:.08em;color:var(--text2);text-transform:uppercase}
+.ppct{font-size:11px;font-weight:600;color:var(--text)}
+.pt{height:4px;background:var(--bg3);border:1px solid var(--border)}
+.pf{height:100%;transition:width .5s ease}
+.fa{background:var(--accent)}
+.fg{background:var(--green)}
+.fb{background:var(--blue)}
+.panel{background:var(--bg1);border:1px solid var(--border);margin-bottom:10px}
+.phead{background:var(--bg3);border-bottom:1px solid var(--border);padding:6px 11px;display:flex;align-items:center;justify-content:space-between}
+.ptitle{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+.pbody{padding:11px}
+.mu-step{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mu-step:last-child{border-bottom:none}
+.mu-num{font-size:10px;font-weight:600;color:var(--accent);background:var(--bg3);border:1px solid var(--accent2);width:19px;height:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.mu-t{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.mu-n{font-size:10px;color:var(--text3);line-height:1.5}
+.mu-step.done .mu-t{color:var(--text3);text-decoration:line-through}
+.mu-step.done .mu-num{color:var(--green);border-color:var(--green2)}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cnb{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 10px;cursor:pointer}
+.cnb:hover{border-color:var(--accent);color:var(--accent)}
+.cml{font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+.week-label{font-size:9px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;padding:6px 0 4px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.day-card{background:var(--bg1);border:1px solid var(--border);margin-bottom:8px;position:relative}
+.day-card.today{border-color:var(--accent)}
+.day-card.weekend{opacity:.5}
+.day-card.has-log{background:var(--bg2)}
+.day-header{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid var(--border);cursor:pointer}
+.day-header:hover{background:var(--bg3)}
+.day-left{display:flex;align-items:center;gap:10px}
+.day-name{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;width:28px}
+.day-num{font-size:18px;font-weight:600;color:var(--text);line-height:1}
+.day-card.today .day-name{color:var(--accent)}
+.day-card.today .day-num{color:var(--accent)}
+.day-dots{display:flex;gap:3px;align-items:center}
+.ddot{width:5px;height:5px;border-radius:50%}
+.ddot.roth{background:var(--roth)}
+.ddot.mu{background:var(--mu)}
+.ddot.individual{background:var(--ind)}
+.day-total{font-size:11px;font-weight:600;color:var(--green)}
+.day-plan{font-size:10px;color:var(--text3);font-style:italic}
+.day-body{display:none;padding:10px 11px;border-top:1px solid var(--border)}
+.day-body.open{display:block}
+.dlog-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
+.dlog-item:last-child{border-bottom:none}
+.dlog-type{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px}
+.dlog-type.roth{color:var(--roth)}
+.dlog-type.mu{color:var(--mu)}
+.dlog-type.individual{color:var(--ind)}
+.dlog-note{font-size:10px;color:var(--text3)}
+.dlog-amt{font-size:12px;font-weight:600;color:var(--text)}
+.db{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 2px}
+.db:hover{color:var(--red)}
+.day-plan-block{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.plan-tag{display:inline-block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-bottom:4px}
+.plan-tag.roth{color:var(--roth);border:1px solid var(--roth)}
+.plan-tag.mu{color:var(--mu);border:1px solid var(--mu)}
+.plan-tag.individual{color:var(--ind);border:1px solid var(--ind)}
+.plan-tag.watch{color:var(--text3);border:1px solid var(--border2)}
+.plan-title{font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px}
+.plan-note{font-size:10px;color:var(--text3);line-height:1.5}
+.log-form{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.frow{display:flex;gap:7px;margin-bottom:7px}
+.fi{background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 9px;outline:none;width:100%;margin-bottom:7px}
+.fi:focus{border-color:var(--accent)}
+.fsel{background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 9px;outline:none;width:120px;flex-shrink:0;cursor:pointer}
+.btn{background:var(--accent);color:#0a0b0d;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;padding:8px;cursor:pointer;width:100%;text-transform:uppercase}
+.btn:hover{background:var(--accent2)}
+.wr{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border)}
+.wr:last-child{border-bottom:none}
+.wlbl{font-size:12px;color:var(--text);margin-bottom:2px;font-weight:500}
+.wnote{font-size:10px;color:var(--text3)}
+.wamt{font-size:13px;font-weight:600;color:var(--accent);flex-shrink:0}
+.li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px}
+.li:last-child{border-bottom:none}
+.lt{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.lt.roth{color:var(--roth)}
+.lt.mu{color:var(--mu)}
+.lt.individual{color:var(--ind)}
+.lm{font-size:10px;color:var(--text3)}
+.lamt{font-size:13px;font-weight:600;color:var(--text)}
+.empty{color:var(--text3);font-size:11px;text-align:center;padding:16px 0;letter-spacing:.06em}
+.ci{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.ci:last-child{border-bottom:none}
+.cb{width:13px;height:13px;border:1px solid var(--border2);background:var(--bg);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green)}
+.cb.on{border-color:var(--green);background:rgba(0,208,132,.1)}
+.clbl{font-size:12px;color:var(--text2);line-height:1.4}
+.ci.done .clbl{color:var(--text3);text-decoration:line-through}
+</style>
 </head>
 <body>
-<div class="app">
-
-  <!-- Header -->
-  <div class="eyebrow">Portfolio Tracker · May 2025</div>
-  <h1>Investment <span>Calendar</span></h1>
-  <p class="sub">Starting Fri May 15 · Check tasks · Log amounts · Add notes</p>
-
-  <!-- Install banner (shown only on mobile, hidden if dismissed) -->
-  <div class="install-banner" id="installBanner" style="display:none">
-    <div class="install-text">
-      <strong>Add to Home Screen</strong><br>
-      Tap the share icon → "Add to Home Screen" to install this as an app.
-    </div>
-    <button class="install-dismiss" onclick="dismissBanner()">✕</button>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="ring-wrap">
-        <svg id="ringTasks" width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#1e2128" stroke-width="5"/><circle id="ringTasksArc" cx="26" cy="26" r="22" fill="none" stroke="#00e887" stroke-width="5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2"/></svg>
-        <div class="ring-pct" id="ringTasksPct" style="color:#00e887">0%</div>
-      </div>
-      <div>
-        <div class="stat-label">Tasks done</div>
-        <div class="stat-val" id="statTasks" style="color:#00e887">0/0</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="ring-wrap">
-        <svg width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#1e2128" stroke-width="5"/><circle id="ringRothArc" cx="26" cy="26" r="22" fill="none" stroke="#3d8eff" stroke-width="5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2"/></svg>
-        <div class="ring-pct" id="ringRothPct" style="color:#3d8eff">0%</div>
-      </div>
-      <div>
-        <div class="stat-label">Roth deposited</div>
-        <div class="stat-val" id="statRoth" style="color:#3d8eff">$0</div>
-        <div class="stat-sub">of $4,400 goal</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="ring-wrap">
-        <svg width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#1e2128" stroke-width="5"/><circle id="ringIndArc" cx="26" cy="26" r="22" fill="none" stroke="#ffb547" stroke-width="5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2"/></svg>
-        <div class="ring-pct" id="ringIndPct" style="color:#ffb547">0%</div>
-      </div>
-      <div>
-        <div class="stat-label">Individual in</div>
-        <div class="stat-val" id="statInd" style="color:#ffb547">$0</div>
-        <div class="stat-sub">this month</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Calendar rendered by JS -->
-  <div class="cal" id="cal"></div>
-</div>
-
-<!-- FAB -->
-<button class="fab" onclick="openLog()" title="Activity log">≡</button>
-
-<!-- Entry modal -->
-<div class="overlay" id="entryOverlay" style="display:none" onclick="closeEntry(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2 id="modalTitle">Log Amount</h2>
-    <p class="modal-sub" id="modalSub">Enter how much you actually invested ($)</p>
-    <input  class="inp" id="modalInput"    type="number" placeholder="e.g. 133" style="display:none" />
-    <textarea class="inp" id="modalTextarea" placeholder="e.g. Bought 1 share VTI @ $251.40…" style="display:none"></textarea>
-    <button class="btn-save" onclick="saveEntry()">Save</button>
-    <button class="btn-cancel" onclick="closeEntryModal()">Cancel</button>
+<div class="ticker-bar">
+  <div class="ticker-inner">
+    &nbsp;&nbsp;&nbsp;MU 739.58 ▲ +2.3% &nbsp;|&nbsp; AVUV 117.25 ▼ -1.28% &nbsp;|&nbsp; VTI 362.74 ▼ -1.27% &nbsp;|&nbsp; SCHD 31.72 ▼ -0.25% &nbsp;|&nbsp; SCHG 34.26 ▼ -1.24% &nbsp;|&nbsp; VXUS 83.11 ▼ -2.25% &nbsp;|&nbsp; AAPL 300.23 ▲ +0.68% &nbsp;|&nbsp; SLV 69.04 ▼ -8.57% &nbsp;|&nbsp; USL 55.27 ▲ +2.07% &nbsp;|&nbsp; VOO 533.80 ▲ +0.6% &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MU 739.58 ▲ +2.3% &nbsp;|&nbsp; AVUV 117.25 ▼ -1.28% &nbsp;|&nbsp; VTI 362.74 ▼ -1.27% &nbsp;|&nbsp; SCHD 31.72 ▼ -0.25% &nbsp;|&nbsp; SCHG 34.26 ▼ -1.24%
   </div>
 </div>
-
-<!-- Log modal -->
-<div class="overlay" id="logOverlay" style="display:none" onclick="closeLog(event)">
-  <div class="log-modal" onclick="event.stopPropagation()">
-    <div class="log-title">Activity Log</div>
-    <div id="logContent"></div>
-    <button class="btn-cancel" style="margin-top:16px" onclick="closeLogModal()">Close</button>
+<div class="hdr">
+  <div class="logo">INVEST<span>TRACK</span> // JM</div>
+  <div class="hdr-time" id="clk">--:-- --</div>
+</div>
+<div class="nav">
+  <button class="ntab active" onclick="showTab('dash')">DASHBOARD</button>
+  <button class="ntab" onclick="showTab('cal')">CALENDAR</button>
+  <button class="ntab" onclick="showTab('act')">ACTIONS</button>
+</div>
+<div class="main">
+  <div id="s-dash" class="sec active">
+    <div style="padding-top:4px;margin-bottom:10px"><div class="slbl">2026 portfolio overview</div></div>
+    <div class="stat-row">
+      <div class="sbox"><div class="skey">Roth contributed</div><div class="sval ac" id="d-rc">$2,655</div><div class="ssub">of $7,000 limit</div></div>
+      <div class="sbox"><div class="skey">Roth remaining</div><div class="sval" id="d-rr">$4,345</div><div class="ssub">$1,500 → MU</div></div>
+      <div class="sbox"><div class="skey">Weekly Roth target</div><div class="sval ac">$86</div><div class="ssub">post-MU allocation</div></div>
+      <div class="sbox"><div class="skey">Individual cash</div><div class="sval">$841</div><div class="ssub">stays in individual</div></div>
+    </div>
+    <div class="pb"><div class="ph"><span class="plbl">Roth 2026</span><span class="ppct" id="d-rp">38%</span></div><div class="pt"><div class="pf fa" id="br" style="width:38%"></div></div></div>
+    <div class="pb"><div class="ph"><span class="plbl">MU position funded</span><span class="ppct" id="d-mp">0%</span></div><div class="pt"><div class="pf fg" id="bm" style="width:0%"></div></div></div>
+    <div class="pb"><div class="ph"><span class="plbl">Weeks tracked</span><span class="ppct" id="d-wk">0 / 33</span></div><div class="pt"><div class="pf fb" id="bw" style="width:0%"></div></div></div>
+    <div class="divider"></div>
+    <div class="slbl">MU buy plan — Roth IRA</div>
+    <div class="panel">
+      <div class="phead"><span class="ptitle">Micron Technology</span><span style="font-size:10px;color:var(--text3)">initiated 15 MAY 2026</span></div>
+      <div class="pbody">
+        <div class="mu-step" id="ms1"><div class="mu-num">1</div><div><div class="mu-t">Transfer $1,500 bank → Roth IRA</div><div class="mu-n">Initiated Fri May 15 · landed Sat May 16<br>✓ Transfer confirmed</div></div></div>
+        <div class="mu-step" id="ms2"><div class="mu-num">2</div><div><div class="mu-t">Buy share 1 @ ~$725 · size ~$800</div><div class="mu-n">Execute Monday May 18 at market open<br>Don't chase — if it gaps up hard, wait</div></div></div>
+        <div class="mu-step" id="ms3"><div class="mu-num">3</div><div><div class="mu-t">Set limit order for share 2 @ $710–720</div><div class="mu-n">Size ~$700 · good-till-cancelled<br>Blended avg ~$718 if both fill</div></div></div>
+        <div class="mu-step" id="ms4"><div class="mu-num">4</div><div><div class="mu-t">Hold — 12–18 month thesis</div><div class="mu-n">AI memory supercycle · DRAM tight through 2027<br>Analyst target range: $950–1,000</div></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="slbl">Holdings</div>
+    <div class="panel">
+      <div class="phead"><span class="ptitle">Roth IRA</span><span style="font-size:10px;color:var(--blue)">MAXING 2026</span></div>
+      <div class="pbody" style="font-size:11px;color:var(--text2);line-height:2">AVUV · SCHD · SCHG · VTI · VXUS<br><span style="color:var(--green)">+ MU incoming Monday May 18</span></div>
+    </div>
+    <div class="panel">
+      <div class="phead"><span class="ptitle">Individual</span><span style="font-size:10px;color:var(--yellow)">BUILDING CORE</span></div>
+      <div class="pbody" style="font-size:11px;color:var(--text2);line-height:2">AAPL · SLV · USL · $841 cash<br><span style="color:var(--text3)">Adding VOO/VTI weekly · let SLV/USL ride</span></div>
+    </div>
+  </div>
+  <div id="s-cal" class="sec">
+    <div style="padding-top:4px">
+      <div class="cal-month-nav">
+        <button class="cnb" onclick="chgMonth(-1)">◀ PREV</button>
+        <div class="cml" id="cml">MAY 2026</div>
+        <button class="cnb" onclick="chgMonth(1)">NEXT ▶</button>
+      </div>
+    </div>
+    <div id="day-cards"></div>
+    <div class="divider"></div>
+    <div class="slbl">Weekly plan</div>
+    <div class="panel">
+      <div class="phead"><span class="ptitle">Budget breakdown</span></div>
+      <div class="pbody">
+        <div class="wr"><div><div class="wlbl">Roth IRA</div><div class="wnote">Rotate: VTI · AVUV · SCHD · SCHG</div></div><div class="wamt">$86/wk</div></div>
+        <div class="wr"><div><div class="wlbl">Individual</div><div class="wnote">Build VOO/VTI core position</div></div><div class="wamt">$150–200/wk</div></div>
+        <div class="wr"><div><div class="wlbl">Bank buffer</div><div class="wnote">Emergency fund / spending</div></div><div class="wamt">~$264–314/wk</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="slbl">All entries</div>
+    <div class="panel"><div class="pbody" id="llist"><div class="empty">// NO ENTRIES LOGGED</div></div></div>
+  </div>
+  <div id="s-act" class="sec">
+    <div style="padding-top:4px;margin-bottom:10px"><div class="slbl">Action items</div></div>
+    <div class="panel" style="margin-bottom:10px">
+      <div class="phead"><span class="ptitle">This weekend</span></div>
+      <div class="pbody">
+        <div class="ci done" id="a1" onclick="tg('a1')"><div class="cb on" id="a1b">✓</div><div class="clbl">Initiate $1,500 transfer bank → Roth IRA (Fri May 15)</div></div>
+        <div class="ci done" id="a2" onclick="tg('a2')"><div class="cb on" id="a2b">✓</div><div class="clbl">Confirm $1,500 landed in Roth (Sat May 16)</div></div>
+        <div class="ci" id="a3" onclick="tg('a3')"><div class="cb" id="a3b"></div><div class="clbl">Watch MU price action — AH showing ~$725</div></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:10px">
+      <div class="phead"><span class="ptitle">Monday May 18</span></div>
+      <div class="pbody">
+        <div class="ci" id="a4" onclick="tg('a4')"><div class="cb" id="a4b"></div><div class="clbl">Buy MU share 1 at market open (~$725 AH)</div></div>
+        <div class="ci" id="a5" onclick="tg('a5')"><div class="cb" id="a5b"></div><div class="clbl">Set GTC limit order for MU share 2 @ $710–720</div></div>
+        <div class="ci" id="a6" onclick="tg('a6')"><div class="cb" id="a6b"></div><div class="clbl">Log MU buy in the calendar tab</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="phead"><span class="ptitle">Ongoing weekly</span></div>
+      <div class="pbody">
+        <div class="ci" id="a7" onclick="tg('a7')"><div class="cb" id="a7b"></div><div class="clbl">Set up $86/week auto-contribution to Roth</div></div>
+        <div class="ci" id="a8" onclick="tg('a8')"><div class="cb" id="a8b"></div><div class="clbl">Start $150–200/week individual adds (VOO/VTI)</div></div>
+        <div class="ci" id="a9" onclick="tg('a9')"><div class="cb" id="a9b"></div><div class="clbl">Log each contribution in the calendar tab</div></div>
+      </div>
+    </div>
   </div>
 </div>
-
 <script>
-// ── Data ────────────────────────────────────────────────────────────────────
-const ROTH_GOAL = 4400;
-const IND_GOAL  = 1200;
-
-const SCHEDULE = [
-  { date:"2025-05-15", day:"Fri", num:15, type:"action", weekLabel:"Week of May 15", tasks:[
-    { id:"t1", tag:"roth",       label:"Roth IRA",   title:"Deposit $133 → buy VTI",                   note:"Kick off your weekly Roth rhythm. Add to your existing VTI position.",                         amount:133, account:"roth"       },
-    { id:"t2", tag:"watch",      label:"Watch",      title:"Note MU price & set buy alert",            note:"Record today's MU price. Set a price alert 5–8% below current as your entry trigger.",        amount:0,   account:null         },
-    { id:"t3", tag:"watch",      label:"Watch",      title:"End-of-week portfolio review",             note:"Check both accounts. Observe only — no panic moves.",                                        amount:0,   account:null         },
-  ]},
-  { date:"2025-05-16", day:"Sat", num:16, type:"weekend", weekLabel:null, tasks:[] },
-  { date:"2025-05-17", day:"Sun", num:17, type:"weekend", weekLabel:null, tasks:[] },
-  { date:"2025-05-18", day:"Mon", num:18, type:"action", weekLabel:"Week of May 18", tasks:[
-    { id:"t4", tag:"individual", label:"Individual", title:"Deposit paycheck → $150–200 into VOO",     note:"Start building your individual core. Even a partial share is progress.",                       amount:175, account:"individual" },
-  ]},
-  { date:"2025-05-19", day:"Tue", num:19, type:"action", weekLabel:null, tasks:[
-    { id:"t5", tag:"individual", label:"Individual", title:"Research MU — earnings & analyst targets", note:"Study the last 2 earnings reports. Know your conviction before you pull the trigger.",         amount:0,   account:null         },
-  ]},
-  { date:"2025-05-20", day:"Wed", num:20, type:"action", weekLabel:null, tasks:[
-    { id:"t6", tag:"individual", label:"Individual", title:"If MU alert triggered → buy $400–500",    note:"Don't go all-in. Keep ~$350 cash in reserve in case it dips further.",                        amount:450, account:"individual" },
-  ]},
-  { date:"2025-05-21", day:"Thu", num:21, type:"action", weekLabel:null, tasks:[
-    { id:"t7", tag:"watch",      label:"Watch",      title:"MU check-in",                             note:"If you bought: hold firm, ignore short-term noise. If not: is the dip still coming?",         amount:0,   account:null         },
-  ]},
-  { date:"2025-05-22", day:"Fri", num:22, type:"action", weekLabel:null, tasks:[
-    { id:"t8", tag:"watch",      label:"Watch",      title:"End-of-week portfolio review",            note:"Note weekly performance across both accounts. Track total invested vs plan.",                  amount:0,   account:null         },
-    { id:"t9", tag:"individual", label:"Individual", title:"Second MU buy if it dipped further",      note:"If MU dropped more since your first buy, deploy remaining cash reserve now.",                 amount:350, account:"individual" },
-  ]},
-  { date:"2025-05-23", day:"Sat", num:23, type:"weekend", weekLabel:null, tasks:[] },
-  { date:"2025-05-24", day:"Sun", num:24, type:"weekend", weekLabel:null, tasks:[] },
-  { date:"2025-05-25", day:"Mon", num:25, type:"action", weekLabel:"Week of May 25 — Memorial Day week", tasks:[
-    { id:"t10", tag:"individual",label:"Individual", title:"Deposit paycheck → $150–200 into VOO or MU", note:"Add to whichever looks better value today.",                                              amount:175, account:"individual" },
-    { id:"t11", tag:"roth",      label:"Roth IRA",   title:"Deposit $133 → buy VTI or AVUV",           note:"Alternate your Roth buy between VTI and AVUV to dollar-cost average into both.",            amount:133, account:"roth"       },
-  ]},
-  { date:"2025-05-26", day:"Mon", num:26, type:"holiday", weekLabel:null, tasks:[
-    { id:"t12", tag:"hold",      label:"Holiday",    title:"Memorial Day — Markets closed",            note:"Enjoy the long weekend. Good day to sketch your June investment targets.",                   amount:0,   account:null         },
-  ]},
-  { date:"2025-05-27", day:"Tue", num:27, type:"action", weekLabel:null, tasks:[
-    { id:"t13", tag:"roth",      label:"Roth IRA",   title:"Deposit $133 → buy SCHD or SCHG",         note:"Add to whichever is lagging in your Roth — rotate the buy to the underperformer.",           amount:133, account:"roth"       },
-  ]},
-  { date:"2025-05-28", day:"Wed", num:28, type:"action", weekLabel:null, tasks:[
-    { id:"t14", tag:"watch",     label:"Watch",      title:"Log MU cost basis",                       note:"Record your avg cost per share. Are you up, down, or flat? Decide your June add strategy.",  amount:0,   account:null         },
-  ]},
-  { date:"2025-05-29", day:"Thu", num:29, type:"action", weekLabel:null, tasks:[
-    { id:"t15", tag:"watch",     label:"Review",     title:"End of May full portfolio audit",         note:"Tally Roth contributed YTD, individual deployed, cash remaining. Set June targets.",          amount:0,   account:null         },
-    { id:"t16", tag:"individual",label:"Individual", title:"Lock in June MU strategy",               note:"Add more on weakness? Hold and build VOO? Decide before June 1.",                            amount:0,   account:null         },
-  ]},
-  { date:"2025-05-30", day:"Fri", num:30, type:"action", weekLabel:null, tasks:[
-    { id:"t17", tag:"watch",     label:"Review",     title:"Final week check — any last moves?",      note:"Last trading day of the work week. Any positions to clean up before June?",                  amount:0,   account:null         },
-  ]},
-  { date:"2025-05-31", day:"Sat", num:31, type:"weekend", weekLabel:null, tasks:[] },
-];
-
-// ── State (localStorage) ────────────────────────────────────────────────────
-const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || d); } catch { return JSON.parse(d); } };
-let done    = load("iv_done",    "{}");
-let amounts = load("iv_amounts", "{}");
-let notes   = load("iv_notes",   "{}");
-const save  = () => {
-  localStorage.setItem("iv_done",    JSON.stringify(done));
-  localStorage.setItem("iv_amounts", JSON.stringify(amounts));
-  localStorage.setItem("iv_notes",   JSON.stringify(notes));
+var S={entries:[],checks:{a1:true,a2:true},cy:2026,cm:4,openDay:null};
+var MO=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+var MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DNL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var DNS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var PLAN={
+  1:[{tag:'roth',title:'Deposit $86 → Roth IRA',note:'Pick this week\'s ETF: VTI, AVUV, SCHD, or SCHG'}],
+  3:[{tag:'individual',title:'Add $150–200 → Individual',note:'Buy VOO or VTI. Let SLV/USL ride.'}],
+  5:[{tag:'watch',title:'Weekly review',note:'Check MU price · review progress bars · log anything missed'}]
 };
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-const allTasks = () => SCHEDULE.flatMap(d => d.tasks).filter(t => t.id);
-const today    = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
-
-const rothTotal = () => allTasks().filter(t => t.account === "roth"       && done[t.id]).reduce((s,t) => s + parseFloat(amounts[t.id] || t.amount || 0), 0);
-const indTotal  = () => allTasks().filter(t => t.account === "individual" && done[t.id]).reduce((s,t) => s + parseFloat(amounts[t.id] || t.amount || 0), 0);
-
-function updateStats() {
-  const tasks = allTasks();
-  const c = tasks.filter(t => done[t.id]).length;
-  const n = tasks.length;
-  const r = rothTotal(), ind = indTotal();
-  const circ = 138.2;
-
-  document.getElementById("statTasks").textContent = `${c}/${n}`;
-  document.getElementById("ringTasksArc").style.strokeDashoffset = circ * (1 - c/n);
-  document.getElementById("ringTasksPct").textContent = `${Math.round(c/n*100)}%`;
-
-  document.getElementById("statRoth").textContent = `$${r.toFixed(0)}`;
-  document.getElementById("ringRothArc").style.strokeDashoffset = circ * (1 - Math.min(r/ROTH_GOAL,1));
-  document.getElementById("ringRothPct").textContent = `${Math.round(Math.min(r/ROTH_GOAL,1)*100)}%`;
-
-  document.getElementById("statInd").textContent = `$${ind.toFixed(0)}`;
-  document.getElementById("ringIndArc").style.strokeDashoffset = circ * (1 - Math.min(ind/IND_GOAL,1));
-  document.getElementById("ringIndPct").textContent = `${Math.round(Math.min(ind/IND_GOAL,1)*100)}%`;
-}
-
-// ── Render calendar ──────────────────────────────────────────────────────────
-function renderCal() {
-  const td   = today();
-  const cal  = document.getElementById("cal");
-  cal.innerHTML = "";
-
-  SCHEDULE.forEach(day => {
-    if (day.weekLabel) {
-      const wl = document.createElement("div");
-      wl.className = "week-label";
-      wl.textContent = day.weekLabel;
-      cal.appendChild(wl);
-    }
-
-    const card = document.createElement("div");
-    card.className = "day-card" + (day.date === td ? " today" : "") + (day.type === "weekend" ? " weekend" : "");
-
-    let inner = `
-      ${day.date === td ? '<span class="today-badge">TODAY</span>' : ""}
-      <div>
-        <div class="d-name">${day.day}</div>
-        <div class="d-num">${day.num}</div>
-      </div>
-      <div>`;
-
-    if (day.type === "weekend") {
-      inner += `<div class="weekend-msg">Markets closed — rest &amp; research</div>`;
-    } else {
-      day.tasks.forEach(task => {
-        const isDone  = !!done[task.id];
-        const hasAmt  = amounts[task.id];
-        const hasNote = notes[task.id];
-        const isHol   = day.type === "holiday";
-
-        inner += `<div class="task-row">`;
-        if (!isHol) inner += `<button class="check${isDone ? " done" : ""}" onclick="toggleDone('${task.id}')"></button>`;
-        inner += `
-          <div class="task-body">
-            <div class="tag-row">
-              <span class="pill pill-${task.tag}">${task.label}</span>
-              ${hasAmt  ? `<span class="badge-amt">$${hasAmt}</span>`  : ""}
-              ${hasNote ? `<span class="badge-note">note ✎</span>` : ""}
-            </div>
-            <div class="t-title${isDone ? " done" : ""}">${task.title}</div>
-            <div class="t-note">${task.note}</div>`;
-        if (!isHol) {
-          inner += `<div class="action-btns">`;
-          if (task.amount > 0) inner += `<button class="smbtn smbtn-green" onclick="openEntry('${task.id}','amount')">${hasAmt ? `edit $${hasAmt}` : "+ log amount"}</button>`;
-          inner += `<button class="smbtn smbtn-amber" onclick="openEntry('${task.id}','note')">${hasNote ? "edit note" : "+ add note"}</button>`;
-          inner += `</div>`;
-        }
-        inner += `</div></div>`;
-      });
-    }
-
-    inner += `</div>`;
-    card.innerHTML = inner;
-    cal.appendChild(card);
+var SPECIAL={
+  '2026-05-15':[{tag:'roth',title:'Transfer $1,500 bank → Roth ✓',note:'Done — transfer confirmed landed'}],
+  '2026-05-18':[{tag:'mu',title:'Buy MU share 1 at market open',note:'AH showing ~$725 · execute at open · don\'t chase gaps'},{tag:'mu',title:'Set GTC limit order for share 2 @ $710–720',note:'Size ~$700 · blended avg ~$718 if both fill'}],
+  '2026-05-25':[{tag:'watch',title:'Memorial Day — market closed',note:'No trading today'}]
+};
+function load(){try{var d=localStorage.getItem('it_v5');if(d){var p=JSON.parse(d);S.entries=p.entries||[];S.checks=Object.assign({a1:true,a2:true},p.checks||{});}}catch(e){}}
+function save(){try{localStorage.setItem('it_v5',JSON.stringify({entries:S.entries,checks:S.checks}));}catch(e){}}
+function g(id){return document.getElementById(id);}
+function st(id,v){var el=g(id);if(el)el.textContent=v;}
+function sw(id,w){var el=g(id);if(el)el.style.width=w+'%';}
+function clk(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;st('clk',(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+' '+ap);}
+setInterval(clk,1000);clk();
+function showTab(t){
+  ['dash','cal','act'].forEach(function(id,i){
+    g('s-'+id).classList.toggle('active',id===t);
+    document.querySelectorAll('.ntab')[i].classList.toggle('active',id===t);
   });
-
-  updateStats();
+  if(t==='cal'){renderDays();renderLog();}
+  if(t==='dash')updateStats();
+  if(t==='act')renderChecks();
 }
-
-// ── Toggle done ──────────────────────────────────────────────────────────────
-function toggleDone(id) {
-  done[id] = !done[id];
-  save();
-  renderCal();
+function updateStats(){
+  var rA=S.entries.filter(function(e){return e.type==='roth';}).reduce(function(s,e){return s+e.amt;},0);
+  var mA=S.entries.filter(function(e){return e.type==='mu';}).reduce(function(s,e){return s+e.amt;},0);
+  var wk=S.entries.filter(function(e){return e.type==='roth';}).length;
+  var rT=2655+rA,rR=Math.max(0,7000-rT);
+  var rP=Math.min(100,Math.round(rT/7000*100));
+  var mP=Math.min(100,Math.round(mA/1500*100));
+  var wP=Math.min(100,Math.round(wk/33*100));
+  st('d-rc','$'+Math.round(rT).toLocaleString());
+  st('d-rr','$'+Math.round(rR).toLocaleString());
+  st('d-rp',rP+'%');sw('br',rP);
+  st('d-mp',mP+'%');sw('bm',mP);
+  st('d-wk',wk+' / 33');sw('bw',wP);
+  var map={a4:'ms2',a5:'ms3'};
+  Object.keys(map).forEach(function(ak){var s=g(map[ak]);if(s)s.classList.toggle('done',!!S.checks[ak]);});
+  if(g('ms1'))g('ms1').classList.toggle('done',true);
 }
-
-// ── Entry modal ──────────────────────────────────────────────────────────────
-let activeModal = null;
-function openEntry(id, type) {
-  activeModal = { id, type };
-  const overlay  = document.getElementById("entryOverlay");
-  const inp      = document.getElementById("modalInput");
-  const ta       = document.getElementById("modalTextarea");
-  const title    = document.getElementById("modalTitle");
-  const sub      = document.getElementById("modalSub");
-
-  if (type === "amount") {
-    title.textContent = "Log Actual Amount";
-    sub.textContent   = "Enter how much you actually invested ($)";
-    inp.value = amounts[id] || "";
-    inp.style.display = "block"; ta.style.display = "none";
-    setTimeout(() => inp.focus(), 100);
-  } else {
-    title.textContent = "Add Note";
-    sub.textContent   = "Ticker, price paid, shares — anything useful.";
-    ta.value = notes[id] || "";
-    ta.style.display = "block"; inp.style.display = "none";
-    setTimeout(() => ta.focus(), 100);
+function fmtD(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function chgMonth(dir){
+  S.cm+=dir;if(S.cm>11){S.cm=0;S.cy++;}if(S.cm<0){S.cm=11;S.cy--;}
+  S.openDay=null;renderDays();
+}
+function renderDays(){
+  st('cml',MO[S.cm]+' '+S.cy);
+  var dim=new Date(S.cy,S.cm+1,0).getDate();
+  var todStr=new Date().toISOString().slice(0,10);
+  var em={};
+  S.entries.forEach(function(e){
+    var d=new Date(e.date+'T12:00:00');
+    if(d.getFullYear()===S.cy&&d.getMonth()===S.cm){var day=d.getDate();if(!em[day])em[day]=[];em[day].push(e);}
+  });
+  var html='';
+  var lastWeek=-1;
+  var today=new Date();
+  var startDay=(S.cy===today.getFullYear()&&S.cm===today.getMonth())?today.getDate():1;
+  for(var day=startDay;day<=dim;day++){
+    var ds=fmtD(S.cy,S.cm,day);
+    var d=new Date(S.cy,S.cm,day);
+    var dow=d.getDay();
+    var week=Math.floor((day+new Date(S.cy,S.cm,1).getDay()-1)/7);
+    if(week!==lastWeek){html+='<div class="week-label">Week of '+MOS[S.cm]+' '+day+'</div>';lastWeek=week;}
+    var isWknd=dow===0||dow===6;
+    var isToday=ds===todStr;
+    var hasLog=!!em[day];
+    var dayEntries=em[day]||[];
+    var tot=dayEntries.reduce(function(s,e){return s+e.amt;},0);
+    var dots=dayEntries.map(function(e){return '<div class="ddot '+e.type+'"></div>';}).join('');
+    var planItems=[];
+    if(SPECIAL[ds])planItems=planItems.concat(SPECIAL[ds]);
+    if(!isWknd&&PLAN[dow])planItems=planItems.concat(PLAN[dow]);
+    var cls='day-card'+(isToday?' today':'')+(isWknd?' weekend':'')+(hasLog?' has-log':'');
+    var isOpen=S.openDay===day;
+    html+='<div class="'+cls+'" id="dc'+day+'"><div class="day-header" onclick="toggleDay('+day+')">';
+    html+='<div class="day-left"><div class="day-name">'+DNS[dow]+'</div><div class="day-num">'+day+'</div>';
+    if(dots)html+='<div class="day-dots">'+dots+'</div>';
+    html+='</div>';
+    if(tot>0)html+='<div class="day-total">+$'+Math.round(tot)+'</div>';
+    else if(planItems.length&&!isWknd)html+='<div class="day-plan">'+planItems[0].title.split(' ').slice(0,3).join(' ')+'...</div>';
+    html+='</div>';
+    html+='<div class="day-body'+(isOpen?' open':'')+'" id="db'+day+'">';
+    if(dayEntries.length){dayEntries.forEach(function(e){var tl=e.type==='roth'?'ROTH IRA':e.type==='mu'?'MU BUY':'INDIVIDUAL';html+='<div class="dlog-item"><div><div class="dlog-type '+e.type+'">'+tl+'</div>'+(e.note?'<div class="dlog-note">'+e.note+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><span class="dlog-amt">$'+Math.round(e.amt)+'</span><button class="db" onclick="delEntry('+e.id+')">×</button></div></div>';});}
+    if(planItems.length){html+='<div class="day-plan-block">';planItems.forEach(function(p){html+='<div style="margin-bottom:8px"><span class="plan-tag '+p.tag+'">'+p.tag.toUpperCase()+'</span><div class="plan-title">'+p.title+'</div><div class="plan-note">'+p.note+'</div></div>';});html+='</div>';}
+    html+='<div class="log-form"><div class="frow"><input type="number" class="fi" id="amt'+day+'" placeholder="$ amount" min="1" style="margin-bottom:0"><select class="fsel" id="typ'+day+'"><option value="roth">Roth</option><option value="mu">MU buy</option><option value="individual">Individual</option></select></div><input type="text" class="fi" id="not'+day+'" placeholder="Note (ticker, price, shares...)"><button class="btn" onclick="addEntry('+day+')">+ LOG</button></div>';
+    html+='</div></div>';
   }
-  overlay.style.display = "flex";
+  g('day-cards').innerHTML=html;
+  if(S.openDay){var b=g('db'+S.openDay);if(b)b.classList.add('open');}
 }
-function saveEntry() {
-  if (!activeModal) return;
-  const { id, type } = activeModal;
-  if (type === "amount") amounts[id] = document.getElementById("modalInput").value;
-  else                   notes[id]   = document.getElementById("modalTextarea").value;
-  save();
-  closeEntryModal();
-  renderCal();
+function toggleDay(day){S.openDay=S.openDay===day?null:day;renderDays();renderLog();}
+function addEntry(day){
+  var amt=parseFloat(g('amt'+day).value),type=g('typ'+day).value,note=g('not'+day).value.trim();
+  if(!amt||amt<=0)return;
+  var d=new Date(S.cy,S.cm,day);
+  S.entries.push({id:Date.now(),amt:amt,type:type,note:note,date:fmtD(S.cy,S.cm,day),display:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})});
+  save();renderDays();renderLog();updateStats();
 }
-function closeEntryModal() { document.getElementById("entryOverlay").style.display = "none"; activeModal = null; }
-function closeEntry(e) { if (e.target === document.getElementById("entryOverlay")) closeEntryModal(); }
-
-// ── Log modal ────────────────────────────────────────────────────────────────
-function openLog() {
-  const tasks = allTasks();
-  const logEntries = tasks.filter(t => amounts[t.id] || notes[t.id]);
-  const r = rothTotal(), ind = indTotal();
-  let html = "";
-
-  if (logEntries.length === 0) {
-    html = `<p style="color:var(--muted);font-size:12px">No entries yet — start logging tomorrow!</p>`;
-  } else {
-    logEntries.forEach(t => {
-      const day = SCHEDULE.find(d => d.tasks.some(x => x.id === t.id));
-      html += `<div class="log-entry">
-        <div class="log-meta">May ${day?.num} (${day?.day}) · ${t.title}</div>
-        ${amounts[t.id] ? `<div class="log-amt">$${amounts[t.id]} invested</div>` : ""}
-        ${notes[t.id]   ? `<div class="log-note">${notes[t.id]}</div>`            : ""}
-      </div>`;
-    });
-  }
-
-  html += `<div class="sum-box">
-    <div class="sum-label">Month Summary</div>
-    <div class="sum-row"><span>Roth deposited</span>      <span style="color:#3d8eff">$${r.toFixed(2)}</span></div>
-    <div class="sum-row"><span>Individual invested</span> <span style="color:#00e887">$${ind.toFixed(2)}</span></div>
-    <div class="sum-row"><span>Total deployed</span>      <span style="color:#ffb547">$${(r+ind).toFixed(2)}</span></div>
-    <div class="sum-row"><span>Roth remaining 2025</span> <span style="color:#8891a4">$${Math.max(0,ROTH_GOAL-r).toFixed(2)}</span></div>
-  </div>`;
-
-  document.getElementById("logContent").innerHTML = html;
-  document.getElementById("logOverlay").style.display = "flex";
+function delEntry(id){S.entries=S.entries.filter(function(e){return e.id!==id;});save();renderDays();renderLog();updateStats();}
+function renderLog(){
+  var el=g('llist');if(!el)return;
+  var month=S.entries.filter(function(e){var d=new Date(e.date+'T12:00:00');return d.getFullYear()===S.cy&&d.getMonth()===S.cm;});
+  if(!month.length){el.innerHTML='<div class="empty">// NO ENTRIES THIS MONTH</div>';return;}
+  el.innerHTML=month.slice().reverse().map(function(e){var tl=e.type==='roth'?'ROTH IRA':e.type==='mu'?'MU BUY':'INDIVIDUAL';return '<div class="li"><div><div class="lt '+e.type+'">'+tl+'</div><div class="lm">'+e.display+(e.note?' · '+e.note:'')+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="lamt">$'+Math.round(e.amt)+'</span><button class="db" onclick="delEntry('+e.id+')">×</button></div></div>';}).join('');
 }
-function closeLogModal() { document.getElementById("logOverlay").style.display = "none"; }
-function closeLog(e) { if (e.target === document.getElementById("logOverlay")) closeLogModal(); }
-
-// ── Install banner ───────────────────────────────────────────────────────────
-function dismissBanner() {
-  localStorage.setItem("iv_banner", "dismissed");
-  document.getElementById("installBanner").style.display = "none";
+function tg(id){S.checks[id]=!S.checks[id];save();renderChecks();updateStats();}
+function renderChecks(){
+  ['a1','a2','a3','a4','a5','a6','a7','a8','a9'].forEach(function(id){
+    var item=g(id),box=g(id+'b');if(!item||!box)return;
+    var on=!!S.checks[id];
+    item.classList.toggle('done',on);box.classList.toggle('on',on);box.textContent=on?'✓':'';
+  });
 }
-function checkInstallBanner() {
-  const isIOS      = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone;
-  const dismissed  = localStorage.getItem("iv_banner") === "dismissed";
-  if (isIOS && !isStandalone && !dismissed) {
-    document.getElementById("installBanner").style.display = "flex";
-  }
-}
-
-// ── Service Worker ───────────────────────────────────────────────────────────
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
-}
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-renderCal();
-checkInstallBanner();
+load();updateStats();renderChecks();
 </script>
 </body>
 </html>
