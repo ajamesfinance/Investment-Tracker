@@ -122,20 +122,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',mon
 </style>
 </head>
 <body>
- 
+
 <div class="hdr">
   <div class="logo">INVEST<span>TRACK</span> // JM</div>
   <div class="hdr-time" id="clk">--:-- --</div>
 </div>
- 
+
 <div class="nav">
   <button class="ntab active" onclick="showTab('dash')">DASHBOARD</button>
   <button class="ntab" onclick="showTab('cal')">CALENDAR</button>
   <button class="ntab" onclick="showTab('act')">ACTIONS</button>
 </div>
- 
+
 <div class="main">
- 
+
   <!-- DASHBOARD -->
   <div id="s-dash" class="sec active">
     <div style="padding-top:4px;margin-bottom:10px"><div class="slbl">2026 portfolio overview</div></div>
@@ -170,7 +170,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',mon
       <div class="pbody" style="font-size:11px;color:var(--text2);line-height:2">AAPL · SLV · USL · $841 cash<br><span style="color:var(--text3)">Adding VOO/VTI weekly · let SLV/USL ride</span></div>
     </div>
   </div>
- 
+
   <!-- CALENDAR -->
   <div id="s-cal" class="sec">
     <div style="padding-top:4px">
@@ -195,7 +195,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',mon
     <div class="slbl">All entries</div>
     <div class="panel"><div class="pbody" id="llist"><div class="empty">// NO ENTRIES LOGGED</div></div></div>
   </div>
- 
+
   <!-- ACTIONS -->
   <div id="s-act" class="sec">
     <div style="padding-top:4px;margin-bottom:10px"><div class="slbl">Action items</div></div>
@@ -224,37 +224,37 @@ html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',mon
       </div>
     </div>
   </div>
- 
+
 </div>
- 
+
 <script>
 var S={entries:[],checks:{a1:true,a2:true},cy:2026,cm:4,openDay:null};
 var MO=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 var MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var DNL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var DNS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
- 
+
 var PLAN={
   1:[{tag:'roth',title:'Deposit $86 → Roth IRA',note:'Pick this week\'s ETF: VTI, AVUV, SCHD, or SCHG'}],
   3:[{tag:'individual',title:'Add $150–200 → Individual',note:'Buy VOO or VTI. Let SLV/USL ride.'}],
   5:[{tag:'watch',title:'Weekly review',note:'Check MU price · review progress bars · log anything missed'}]
 };
- 
+
 var SPECIAL={
   '2026-05-15':[{tag:'roth',title:'Transfer $1,500 bank → Roth ✓',note:'Done — transfer confirmed landed'}],
   '2026-05-18':[{tag:'mu',title:'Buy MU share 1 at market open',note:'AH showing ~$725 · execute at open · don\'t chase gaps'},{tag:'mu',title:'Set GTC limit order for share 2 @ $710–720',note:'Size ~$700 · blended avg ~$718 if both fill'}],
   '2026-05-25':[{tag:'watch',title:'Memorial Day — market closed',note:'No trading today · May 26 (Tue) is next open day'}]
 };
- 
+
 function load(){try{var d=localStorage.getItem('it_v5');if(d){var p=JSON.parse(d);S.entries=p.entries||[];S.checks=Object.assign({a1:true,a2:true},p.checks||{});}}catch(e){}}
 function save(){try{localStorage.setItem('it_v5',JSON.stringify({entries:S.entries,checks:S.checks}));}catch(e){}}
 function g(id){return document.getElementById(id);}
 function st(id,v){var el=g(id);if(el)el.textContent=v;}
 function sw(id,w){var el=g(id);if(el)el.style.width=w+'%';}
- 
+
 function clk(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;st('clk',(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+' '+ap);}
 setInterval(clk,1000);clk();
- 
+
 function showTab(t){
   ['dash','cal','act'].forEach(function(id,i){
     g('s-'+id).classList.toggle('active',id===t);
@@ -264,7 +264,7 @@ function showTab(t){
   if(t==='dash')updateStats();
   if(t==='act')renderChecks();
 }
- 
+
 function updateStats(){
   var rA=S.entries.filter(function(e){return e.type==='roth';}).reduce(function(s,e){return s+e.amt;},0);
   var mA=S.entries.filter(function(e){return e.type==='mu';}).reduce(function(s,e){return s+e.amt;},0);
@@ -281,14 +281,14 @@ function updateStats(){
   var map={a4:'ms2',a5:'ms3'};
   Object.keys(map).forEach(function(ak){var s=g(map[ak]);if(s)s.classList.toggle('done',!!S.checks[ak]);});
 }
- 
+
 function fmtD(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
- 
+
 function chgMonth(dir){
   S.cm+=dir;if(S.cm>11){S.cm=0;S.cy++;}if(S.cm<0){S.cm=11;S.cy--;}
   S.openDay=null;renderDays();
 }
- 
+
 function renderDays(){
   st('cml',MO[S.cm]+' '+S.cy);
   var dim=new Date(S.cy,S.cm+1,0).getDate();
@@ -335,9 +335,9 @@ function renderDays(){
   g('day-cards').innerHTML=html;
   if(S.openDay){var b=g('db'+S.openDay);if(b)b.classList.add('open');}
 }
- 
+
 function toggleDay(day){S.openDay=S.openDay===day?null:day;renderDays();renderLog();}
- 
+
 function addEntry(day){
   var amt=parseFloat(g('amt'+day).value),type=g('typ'+day).value,note=g('not'+day).value.trim();
   if(!amt||amt<=0)return;
@@ -345,19 +345,19 @@ function addEntry(day){
   S.entries.push({id:Date.now(),amt:amt,type:type,note:note,date:fmtD(S.cy,S.cm,day),display:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})});
   save();renderDays();renderLog();updateStats();
 }
- 
+
 function delEntry(id){
   S.entries=S.entries.filter(function(e){return e.id!==id;});
   save();renderDays();renderLog();updateStats();
 }
- 
+
 function renderLog(){
   var el=g('llist');if(!el)return;
   var month=S.entries.filter(function(e){var d=new Date(e.date+'T12:00:00');return d.getFullYear()===S.cy&&d.getMonth()===S.cm;});
   if(!month.length){el.innerHTML='<div class="empty">// NO ENTRIES THIS MONTH</div>';return;}
   el.innerHTML=month.slice().reverse().map(function(e){var tl=e.type==='roth'?'ROTH IRA':e.type==='mu'?'MU BUY':'INDIVIDUAL';return '<div class="li"><div><div class="lt '+e.type+'">'+tl+'</div><div class="lm">'+e.display+(e.note?' · '+e.note:'')+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="lamt">$'+Math.round(e.amt)+'</span><button class="db" onclick="delEntry('+e.id+')">×</button></div></div>';}).join('');
 }
- 
+
 function tg(id){S.checks[id]=!S.checks[id];save();renderChecks();updateStats();}
 function renderChecks(){
   ['a1','a2','a3','a4','a5','a6','a7','a8','a9'].forEach(function(id){
@@ -366,7 +366,7 @@ function renderChecks(){
     item.classList.toggle('done',on);box.classList.toggle('on',on);box.textContent=on?'✓':'';
   });
 }
- 
+
 load();updateStats();renderChecks();
 </script>
 </body>
